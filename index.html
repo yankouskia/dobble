@@ -223,11 +223,10 @@ function handleTap(player,sym,btn){
     document.getElementById('overlay-top').textContent=infoText;
     document.getElementById('overlay-flag').textContent=FLAGS[sym];
     document.getElementById('overlay-bottom').textContent=infoText;
-    overlay.className='show';
+    overlay.classList.add('show');
 
     setTimeout(()=>{
-      overlay.className='';
-      overlay.style.display='none';
+      overlay.classList.remove('show');
       currentPair++;
       showRound();
     },2000);
