@@ -32,10 +32,12 @@ html, body { height:100%; overflow:hidden; font-family:'Segoe UI',system-ui,sans
 @keyframes pop { 0%{transform:scale(1) rotate(var(--rot))} 50%{transform:scale(1.6) rotate(var(--rot))} 100%{transform:scale(1) rotate(var(--rot))} }
 
 /* Green fullscreen overlay */
-#green-overlay { position:fixed; inset:0; background:rgba(34,197,94,0.92); z-index:100; display:none; align-items:center; justify-content:center; flex-direction:column; pointer-events:none; }
+#green-overlay { position:fixed; inset:0; background:rgba(34,197,94,0.95); z-index:9999; display:none; flex-direction:column; align-items:center; justify-content:space-between; pointer-events:none; }
 #green-overlay.show { display:flex; animation:greenFlash 2s forwards; }
 @keyframes greenFlash { 0%{opacity:0} 8%{opacity:1} 80%{opacity:1} 100%{opacity:0} }
-#green-overlay .overlay-text { font-size:clamp(1.8em,6vw,3em); font-weight:900; text-align:center; color:#fff; text-shadow:0 2px 8px rgba(0,0,0,.3); text-transform:uppercase; line-height:1.5; padding:20px; }
+#green-overlay .overlay-top { transform:rotate(180deg); font-size:clamp(1.5em,5vw,2.5em); font-weight:900; text-align:center; color:#fff; text-shadow:0 2px 8px rgba(0,0,0,.3); text-transform:uppercase; line-height:1.5; padding:20px; }
+#green-overlay .overlay-flag { font-size:clamp(4em,15vw,8em); }
+#green-overlay .overlay-bottom { font-size:clamp(1.5em,5vw,2.5em); font-weight:900; text-align:center; color:#fff; text-shadow:0 2px 8px rgba(0,0,0,.3); text-transform:uppercase; line-height:1.5; padding:20px; }
 
 /* removed confetti */
 
@@ -69,7 +71,7 @@ html, body { height:100%; overflow:hidden; font-family:'Segoe UI',system-ui,sans
   </div>
 </div>
 
-<div id="green-overlay"><div class="overlay-text" id="overlay-text"></div></div>
+<div id="green-overlay"><div class="overlay-top" id="overlay-top"></div><div class="overlay-flag" id="overlay-flag"></div><div class="overlay-bottom" id="overlay-bottom"></div></div>
 
 <div id="end-screen">
   <h1 id="winner-text"></h1>
@@ -217,8 +219,10 @@ function handleTap(player,sym,btn){
     // Green fullscreen overlay with country info
     const info=FLAG_INFO[sym];
     const overlay=document.getElementById('green-overlay');
-    const overlayText=document.getElementById('overlay-text');
-    overlayText.innerHTML=`${FLAGS[sym]}<br>${info[0]} — ${info[1]}`;
+    const infoText=`${info[0]} — ${info[1]}`;
+    document.getElementById('overlay-top').textContent=infoText;
+    document.getElementById('overlay-flag').textContent=FLAGS[sym];
+    document.getElementById('overlay-bottom').textContent=infoText;
     overlay.className='show';
 
     setTimeout(()=>{
