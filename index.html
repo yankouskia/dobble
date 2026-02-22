@@ -3,48 +3,53 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0">
-<title>Доббль — Флаги</title>
+<title>ДОББЛЬ — ФЛАГИ</title>
 <style>
 * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
 html, body { height:100%; overflow:hidden; font-family:'Segoe UI',system-ui,sans-serif; background:#1a1a2e; color:#fff; touch-action:manipulation; }
 
-/* START SCREEN */
 #start-screen { display:flex; flex-direction:column; align-items:center; justify-content:center; height:100%; gap:20px; background:linear-gradient(135deg,#667eea,#764ba2); }
 #start-screen h1 { font-size:3em; text-shadow:3px 3px 6px rgba(0,0,0,.3); }
-#start-screen p { font-size:1.2em; opacity:.9; text-align:center; padding:0 20px; }
-.btn { padding:18px 50px; font-size:1.4em; border:none; border-radius:50px; cursor:pointer; font-weight:bold; background:#ff6b6b; color:#fff; box-shadow:0 6px 20px rgba(0,0,0,.3); transition:transform .1s; }
+#start-screen p { font-size:1.2em; opacity:.9; text-align:center; padding:0 20px; text-transform:uppercase; }
+.btn { padding:18px 50px; font-size:1.4em; border:none; border-radius:50px; cursor:pointer; font-weight:bold; background:#ff6b6b; color:#fff; box-shadow:0 6px 20px rgba(0,0,0,.3); transition:transform .1s; text-transform:uppercase; }
 .btn:active { transform:scale(.95); }
 
-/* GAME SCREEN */
 #game-screen { display:none; height:100%; flex-direction:column; }
 .player-half { flex:1; position:relative; display:flex; align-items:center; justify-content:center; overflow:hidden; }
 .player-half.top { background:linear-gradient(180deg,#0f3460,#16213e); transform:rotate(180deg); }
 .player-half.bottom { background:linear-gradient(0deg,#1a1a2e,#0f3460); }
 .divider { height:4px; background:linear-gradient(90deg,#ff6b6b,#ffd93d,#6bcb77,#4d96ff); flex-shrink:0; position:relative; z-index:10; }
 
-/* Score bar */
-.score-bar { position:absolute; top:8px; left:0; right:0; display:flex; justify-content:space-between; padding:0 12px; font-size:.9em; font-weight:bold; z-index:5; pointer-events:none; }
+.score-bar { position:absolute; top:8px; left:0; right:0; display:flex; justify-content:space-between; padding:0 12px; font-size:.9em; font-weight:bold; z-index:5; pointer-events:none; text-transform:uppercase; }
 .score-bar .name { background:rgba(255,255,255,.15); padding:4px 12px; border-radius:20px; }
 
-/* Card area */
-.card-area { width:min(90vw,340px); height:min(42vh,340px); background:radial-gradient(circle,#fff 60%,#e8e8e8); border-radius:50%; position:relative; box-shadow:0 8px 32px rgba(0,0,0,.4); }
-.flag-btn { position:absolute; background:none; border:none; cursor:pointer; line-height:1; transition:transform .15s; z-index:2; padding:4px; }
-.flag-btn:active { transform:scale(1.2) !important; }
+.card-area { width:min(90vw,340px); height:min(42vh,340px); background:radial-gradient(circle,#fff 60%,#e8e8e8); border-radius:50%; position:relative; box-shadow:0 8px 32px rgba(0,0,0,.4); overflow:hidden; }
+.flag-btn { position:absolute; background:none; border:none; cursor:pointer; line-height:1; z-index:2; padding:2px; filter:drop-shadow(1px 1px 2px rgba(0,0,0,.2)); }
+.flag-btn:active { filter:brightness(1.2) drop-shadow(0 0 8px gold); }
 .flag-btn.wrong { animation:shake .4s; }
 .flag-btn.correct { animation:pop .4s; }
-@keyframes shake { 0%,100%{transform:translateX(0)} 25%{transform:translateX(-8px)} 75%{transform:translateX(8px)} }
-@keyframes pop { 0%{transform:scale(1)} 50%{transform:scale(1.8)} 100%{transform:scale(1)} }
+@keyframes shake { 0%,100%{transform:translateX(0) rotate(var(--rot))} 25%{transform:translateX(-8px) rotate(var(--rot))} 75%{transform:translateX(8px) rotate(var(--rot))} }
+@keyframes pop { 0%{transform:scale(1) rotate(var(--rot))} 50%{transform:scale(1.6) rotate(var(--rot))} 100%{transform:scale(1) rotate(var(--rot))} }
 
-/* Round flash */
+/* Celebration overlay */
+.celebration { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; z-index:30; pointer-events:none; opacity:0; }
+.celebration.show { animation:celebIn 2s forwards; }
+@keyframes celebIn { 0%{opacity:0;transform:scale(.3)} 10%{opacity:1;transform:scale(1.1)} 20%{transform:scale(1)} 80%{opacity:1;transform:scale(1)} 100%{opacity:0;transform:scale(.8)} }
+.celeb-text { font-size:clamp(1em,4vw,1.6em); font-weight:900; text-align:center; color:#1a1a2e; text-shadow:0 0 10px rgba(255,215,0,.8), 0 0 20px rgba(255,215,0,.4); background:radial-gradient(circle,rgba(255,215,0,.3),transparent 70%); padding:20px; border-radius:20px; text-transform:uppercase; line-height:1.4; }
+
+/* Confetti */
+.confetti-container { position:absolute; inset:0; pointer-events:none; z-index:25; overflow:hidden; }
+.confetti-piece { position:absolute; width:8px; height:8px; opacity:0; }
+@keyframes confettiFall { 0%{opacity:1;transform:translateY(0) rotate(0deg) scale(1)} 100%{opacity:0;transform:translateY(150px) rotate(720deg) scale(0.3)} }
+
 .flash { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; font-size:2.5em; font-weight:bold; z-index:20; pointer-events:none; opacity:0; }
 .flash.show { animation:flashIn .8s forwards; }
 @keyframes flashIn { 0%{opacity:1;transform:scale(2)} 100%{opacity:0;transform:scale(1)} }
 
-/* END SCREEN */
 #end-screen { display:none; flex-direction:column; align-items:center; justify-content:center; height:100%; gap:16px; background:linear-gradient(135deg,#667eea,#764ba2); text-align:center; padding:20px; }
-#end-screen h1 { font-size:2.5em; }
-#end-screen .scores { font-size:1.6em; margin:10px 0; }
-#end-screen .record { font-size:1em; opacity:.7; }
+#end-screen h1 { font-size:2.5em; text-transform:uppercase; }
+#end-screen .scores { font-size:1.6em; margin:10px 0; text-transform:uppercase; }
+#end-screen .record { font-size:1em; opacity:.7; text-transform:uppercase; }
 </style>
 </head>
 <body>
@@ -59,14 +64,18 @@ html, body { height:100%; overflow:hidden; font-family:'Segoe UI',system-ui,sans
 
 <div id="game-screen">
   <div class="player-half top" id="top-half">
-    <div class="score-bar"><span class="name" id="score1">Игрок 1: 0</span><span class="name" id="round-top">—</span></div>
+    <div class="score-bar"><span class="name" id="score1">ИГРОК 1: 0</span><span class="name" id="round-top">—</span></div>
     <div class="card-area" id="card1"></div>
+    <div class="celebration" id="celeb1"><div class="celeb-text" id="celeb-text1"></div></div>
+    <div class="confetti-container" id="confetti1"></div>
     <div class="flash" id="flash1"></div>
   </div>
   <div class="divider"></div>
   <div class="player-half bottom" id="bot-half">
-    <div class="score-bar"><span class="name" id="score2">Игрок 2: 0</span><span class="name" id="round-bot">—</span></div>
+    <div class="score-bar"><span class="name" id="score2">ИГРОК 2: 0</span><span class="name" id="round-bot">—</span></div>
     <div class="card-area" id="card2"></div>
+    <div class="celebration" id="celeb2"><div class="celeb-text" id="celeb-text2"></div></div>
+    <div class="confetti-container" id="confetti2"></div>
     <div class="flash" id="flash2"></div>
   </div>
 </div>
@@ -80,7 +89,6 @@ html, body { height:100%; overflow:hidden; font-family:'Segoe UI',system-ui,sans
 </div>
 
 <script>
-// 57 recognizable flag emojis (Europe, Asia, Americas, Oceania)
 const FLAGS = [
   '🇦🇷','🇦🇺','🇦🇹','🇧🇪','🇧🇷','🇨🇦','🇨🇱','🇨🇳','🇨🇴','🇭🇷',
   '🇨🇿','🇩🇰','🇪🇨','🇫🇮','🇫🇷','🇩🇪','🇬🇷','🇭🇺','🇮🇸','🇮🇳',
@@ -90,18 +98,33 @@ const FLAGS = [
   '🇹🇭','🇹🇷','🇺🇦','🇬🇧','🇺🇸','🇺🇾','🇻🇳'
 ];
 
-// Generate Dobble deck using projective plane of order n=7
+// Country name and capital in Russian for each flag (same order as FLAGS)
+const FLAG_INFO = [
+  ['АРГЕНТИНА','БУЭНОС-АЙРЕС'],['АВСТРАЛИЯ','КАНБЕРРА'],['АВСТРИЯ','ВЕНА'],['БЕЛЬГИЯ','БРЮССЕЛЬ'],
+  ['БРАЗИЛИЯ','БРАЗИЛИА'],['КАНАДА','ОТТАВА'],['ЧИЛИ','САНТЬЯГО'],['КИТАЙ','ПЕКИН'],
+  ['КОЛУМБИЯ','БОГОТА'],['ХОРВАТИЯ','ЗАГРЕБ'],['ЧЕХИЯ','ПРАГА'],['ДАНИЯ','КОПЕНГАГЕН'],
+  ['ЭКВАДОР','КИТО'],['ФИНЛЯНДИЯ','ХЕЛЬСИНКИ'],['ФРАНЦИЯ','ПАРИЖ'],['ГЕРМАНИЯ','БЕРЛИН'],
+  ['ГРЕЦИЯ','АФИНЫ'],['ВЕНГРИЯ','БУДАПЕШТ'],['ИСЛАНДИЯ','РЕЙКЬЯВИК'],['ИНДИЯ','НЬЮ-ДЕЛИ'],
+  ['ИНДОНЕЗИЯ','ДЖАКАРТА'],['ИРЛАНДИЯ','ДУБЛИН'],['ИЗРАИЛЬ','ИЕРУСАЛИМ'],['ИТАЛИЯ','РИМ'],
+  ['ЯПОНИЯ','ТОКИО'],['КАЗАХСТАН','АСТАНА'],['ЮЖНАЯ КОРЕЯ','СЕУЛ'],['ЛАТВИЯ','РИГА'],
+  ['ЛИТВА','ВИЛЬНЮС'],['ЛЮКСЕМБУРГ','ЛЮКСЕМБУРГ'],['МЕКСИКА','МЕХИКО'],['МОНАКО','МОНАКО'],
+  ['НИДЕРЛАНДЫ','АМСТЕРДАМ'],['НОВАЯ ЗЕЛАНДИЯ','ВЕЛЛИНГТОН'],['НОРВЕГИЯ','ОСЛО'],
+  ['ПАНАМА','ПАНАМА'],['ПАРАГВАЙ','АСУНСЬОН'],['ПЕРУ','ЛИМА'],['ФИЛИППИНЫ','МАНИЛА'],
+  ['ПОЛЬША','ВАРШАВА'],['ПОРТУГАЛИЯ','ЛИССАБОН'],['РУМЫНИЯ','БУХАРЕСТ'],['РОССИЯ','МОСКВА'],
+  ['СИНГАПУР','СИНГАПУР'],['СЛОВАКИЯ','БРАТИСЛАВА'],['СЛОВЕНИЯ','ЛЮБЛЯНА'],['ИСПАНИЯ','МАДРИД'],
+  ['ШВЕЦИЯ','СТОКГОЛЬМ'],['ШВЕЙЦАРИЯ','БЕРН'],['ТАЙВАНЬ','ТАЙБЭЙ'],['ТАИЛАНД','БАНГКОК'],
+  ['ТУРЦИЯ','АНКАРА'],['УКРАИНА','КИЕВ'],['ВЕЛИКОБРИТАНИЯ','ЛОНДОН'],['США','ВАШИНГТОН'],
+  ['УРУГВАЙ','МОНТЕВИДЕО'],['ВЬЕТНАМ','ХАНОЙ']
+];
+
 function generateDeck(n) {
   const cards = [];
-  // First card: symbols 0..n
   cards.push(Array.from({length:n+1},(_,i)=>i));
-  // Next n cards
   for(let i=0;i<n;i++){
     const card=[0];
     for(let j=0;j<n;j++) card.push(n+1+i*n+j);
     cards.push(card);
   }
-  // n*n cards
   for(let i=0;i<n;i++){
     for(let j=0;j<n;j++){
       const card=[i+1];
@@ -112,8 +135,7 @@ function generateDeck(n) {
   return cards;
 }
 
-const DECK = generateDeck(7); // 57 cards, 8 symbols each
-
+const DECK = generateDeck(7);
 let scores=[0,0], currentPair=0, pairs=[], locked=false;
 
 function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.random()*i+1|0;[a[i],a[j]]=[a[j],a[i]]}return a}
@@ -121,10 +143,8 @@ function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.random()*i+1|0;[a
 function startGame(){
   document.getElementById('start-screen').style.display='none';
   document.getElementById('end-screen').style.display='none';
-  const g=document.getElementById('game-screen');
-  g.style.display='flex';
+  document.getElementById('game-screen').style.display='flex';
   scores=[0,0]; currentPair=0;
-  // Create pairs from shuffled deck
   const deck=shuffle([...Array(57).keys()]);
   pairs=[];
   for(let i=0;i+1<deck.length;i+=2) pairs.push([deck[i],deck[i+1]]);
@@ -136,26 +156,40 @@ function showStart(){
   document.getElementById('start-screen').style.display='flex';
 }
 
-// Position 8 flags on a circular card with varied sizes/rotations
+// Scatter flags randomly inside the circular card, Dobble-style
 function renderCard(containerId, cardSymbols, player){
   const el=document.getElementById(containerId);
   el.innerHTML='';
-  const sizes=[42,36,48,32,44,38,46,34];
-  const shuffledSyms=[...cardSymbols];
-  shuffle(shuffledSyms);
+  const shuffledSyms=shuffle([...cardSymbols]);
+  // Varying sizes - some big, some medium
+  const sizeOptions=[58,48,64,44,56,50,62,42];
+  // Pre-generate positions ensuring they stay within circle and don't overlap too much
+  const placed=[];
   shuffledSyms.forEach((sym,i)=>{
-    const angle=(i/8)*Math.PI*2 - Math.PI/2;
-    const r=38; // % from center
-    const cx=50+r*Math.cos(angle);
-    const cy=50+r*Math.sin(angle);
+    const sz=sizeOptions[i];
+    let cx,cy,attempts=0;
+    // Try to place within circle with some randomness
+    do {
+      // Random angle and radius within circle (bias toward filling the space)
+      const angle=Math.random()*Math.PI*2;
+      const maxR = 38 - (sz/4); // keep inside circle, bigger items closer to center
+      const r = Math.random() * maxR;
+      cx = 50 + r * Math.cos(angle);
+      cy = 50 + r * Math.sin(angle);
+      attempts++;
+    } while(attempts<30 && placed.some(p=>Math.hypot(p.x-cx,p.y-cy)<(sz+p.sz)*0.18));
+    placed.push({x:cx,y:cy,sz});
+
+    const rot=(Math.random()*70-35)|0;
     const btn=document.createElement('button');
     btn.className='flag-btn';
     btn.textContent=FLAGS[sym];
-    const sz=sizes[i];
     btn.style.fontSize=sz+'px';
     btn.style.left=`calc(${cx}% - ${sz/2}px)`;
     btn.style.top=`calc(${cy}% - ${sz/2}px)`;
-    btn.style.transform=`rotate(${(Math.random()*60-30)|0}deg)`;
+    btn.style.transform=`rotate(${rot}deg)`;
+    btn.style.setProperty('--rot',rot+'deg');
+    btn.style.zIndex=Math.random()>0.5?3:2;
     btn.dataset.sym=sym;
     btn.addEventListener('click',()=>handleTap(player,sym,btn));
     el.appendChild(btn);
@@ -171,10 +205,27 @@ function showRound(){
   if(currentPair>=pairs.length){ endGame(); return; }
   locked=false;
   const [i1,i2]=pairs[currentPair];
-  const c1=DECK[i1], c2=DECK[i2];
-  renderCard('card1',c1,0);
-  renderCard('card2',c2,1);
+  renderCard('card1',DECK[i1],0);
+  renderCard('card2',DECK[i2],1);
   updateScores();
+}
+
+function spawnConfetti(containerId){
+  const container=document.getElementById(containerId);
+  container.innerHTML='';
+  const colors=['#ff6b6b','#ffd93d','#6bcb77','#4d96ff','#ff9ff3','#feca57','#ff6348','#7bed9f'];
+  for(let i=0;i<40;i++){
+    const piece=document.createElement('div');
+    piece.className='confetti-piece';
+    piece.style.left=Math.random()*100+'%';
+    piece.style.top=(20+Math.random()*30)+'%';
+    piece.style.background=colors[i%colors.length];
+    piece.style.borderRadius=Math.random()>0.5?'50%':'2px';
+    piece.style.width=(5+Math.random()*8)+'px';
+    piece.style.height=(5+Math.random()*8)+'px';
+    piece.style.animation=`confettiFall ${0.8+Math.random()*1.2}s ${Math.random()*0.3}s ease-out forwards`;
+    container.appendChild(piece);
+  }
 }
 
 function handleTap(player,sym,btn){
@@ -185,15 +236,24 @@ function handleTap(player,sym,btn){
     locked=true;
     scores[player]++;
     btn.classList.add('correct');
-    const flashEl=document.getElementById(player===0?'flash1':'flash2');
-    flashEl.textContent='✅ +1';
-    flashEl.className='flash show';
     updateScores();
+
+    // Confetti
+    spawnConfetti(player===0?'confetti1':'confetti2');
+
+    // Show country + capital
+    const info=FLAG_INFO[sym];
+    const celebEl=document.getElementById(player===0?'celeb1':'celeb2');
+    const textEl=document.getElementById(player===0?'celeb-text1':'celeb-text2');
+    textEl.innerHTML=`${FLAGS[sym]}<br>${info[0]} — ${info[1]}`;
+    celebEl.className='celebration show';
+
     setTimeout(()=>{
-      flashEl.className='flash';
+      celebEl.className='celebration';
+      document.getElementById(player===0?'confetti1':'confetti2').innerHTML='';
       currentPair++;
       showRound();
-    },700);
+    },2000);
   } else {
     btn.classList.add('wrong');
     setTimeout(()=>btn.classList.remove('wrong'),400);
@@ -201,8 +261,8 @@ function handleTap(player,sym,btn){
 }
 
 function updateScores(){
-  document.getElementById('score1').textContent=`Игрок 1: ${scores[0]}`;
-  document.getElementById('score2').textContent=`Игрок 2: ${scores[1]}`;
+  document.getElementById('score1').textContent=`ИГРОК 1: ${scores[0]}`;
+  document.getElementById('score2').textContent=`ИГРОК 2: ${scores[1]}`;
   const r=`${currentPair+1}/${pairs.length}`;
   document.getElementById('round-top').textContent=r;
   document.getElementById('round-bot').textContent=r;
@@ -212,17 +272,16 @@ function endGame(){
   document.getElementById('game-screen').style.display='none';
   const e=document.getElementById('end-screen');
   e.style.display='flex';
-  const w=scores[0]>scores[1]?'🏆 Игрок 1 победил!':scores[1]>scores[0]?'🏆 Игрок 2 победил!':'🤝 Ничья!';
+  const w=scores[0]>scores[1]?'🏆 ИГРОК 1 ПОБЕДИЛ!':scores[1]>scores[0]?'🏆 ИГРОК 2 ПОБЕДИЛ!':'🤝 НИЧЬЯ!';
   document.getElementById('winner-text').textContent=w;
-  document.getElementById('final-scores').textContent=`Игрок 1: ${scores[0]} — Игрок 2: ${scores[1]}`;
-  // High scores
+  document.getElementById('final-scores').textContent=`ИГРОК 1: ${scores[0]} — ИГРОК 2: ${scores[1]}`;
   const hs=JSON.parse(localStorage.getItem('dobble-hs')||'[]');
   const best=Math.max(scores[0],scores[1]);
   hs.push({s:best,d:new Date().toLocaleDateString('ru')});
   hs.sort((a,b)=>b.s-a.s);
   if(hs.length>5)hs.length=5;
   localStorage.setItem('dobble-hs',JSON.stringify(hs));
-  document.getElementById('record-info').textContent='Рекорд: '+hs[0].s+' очков ('+hs[0].d+')';
+  document.getElementById('record-info').textContent='РЕКОРД: '+hs[0].s+' ОЧКОВ ('+hs[0].d+')';
 }
 </script>
 </body>
