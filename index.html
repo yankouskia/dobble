@@ -24,27 +24,22 @@ html, body { height:100%; overflow:hidden; font-family:'Segoe UI',system-ui,sans
 .score-bar .name { background:rgba(255,255,255,.15); padding:4px 12px; border-radius:20px; }
 
 .card-area { width:min(90vw,340px); height:min(42vh,340px); background:radial-gradient(circle,#fff 60%,#e8e8e8); border-radius:50%; position:relative; box-shadow:0 8px 32px rgba(0,0,0,.4); overflow:hidden; }
-.flag-btn { position:absolute; background:none; border:none; cursor:pointer; line-height:1; z-index:2; padding:2px; filter:drop-shadow(1px 1px 2px rgba(0,0,0,.2)); }
+.flag-btn { position:absolute; background:none; border:none; cursor:pointer; line-height:1; z-index:2; filter:drop-shadow(1px 1px 2px rgba(0,0,0,.2)); display:flex; align-items:center; justify-content:center; border-radius:50%; }
 .flag-btn:active { filter:brightness(1.2) drop-shadow(0 0 8px gold); }
 .flag-btn.wrong { animation:shake .4s; }
 .flag-btn.correct { animation:pop .4s; }
 @keyframes shake { 0%,100%{transform:translateX(0) rotate(var(--rot))} 25%{transform:translateX(-8px) rotate(var(--rot))} 75%{transform:translateX(8px) rotate(var(--rot))} }
 @keyframes pop { 0%{transform:scale(1) rotate(var(--rot))} 50%{transform:scale(1.6) rotate(var(--rot))} 100%{transform:scale(1) rotate(var(--rot))} }
 
-/* Celebration overlay */
-.celebration { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; z-index:30; pointer-events:none; opacity:0; }
-.celebration.show { animation:celebIn 2s forwards; }
-@keyframes celebIn { 0%{opacity:0;transform:scale(.3)} 10%{opacity:1;transform:scale(1.1)} 20%{transform:scale(1)} 80%{opacity:1;transform:scale(1)} 100%{opacity:0;transform:scale(.8)} }
-.celeb-text { font-size:clamp(1em,4vw,1.6em); font-weight:900; text-align:center; color:#1a1a2e; text-shadow:0 0 10px rgba(255,215,0,.8), 0 0 20px rgba(255,215,0,.4); background:radial-gradient(circle,rgba(255,215,0,.3),transparent 70%); padding:20px; border-radius:20px; text-transform:uppercase; line-height:1.4; }
+/* Green fullscreen overlay */
+#green-overlay { position:fixed; inset:0; background:rgba(34,197,94,0.92); z-index:100; display:none; align-items:center; justify-content:center; flex-direction:column; pointer-events:none; }
+#green-overlay.show { display:flex; animation:greenFlash 2s forwards; }
+@keyframes greenFlash { 0%{opacity:0} 8%{opacity:1} 80%{opacity:1} 100%{opacity:0} }
+#green-overlay .overlay-text { font-size:clamp(1.8em,6vw,3em); font-weight:900; text-align:center; color:#fff; text-shadow:0 2px 8px rgba(0,0,0,.3); text-transform:uppercase; line-height:1.5; padding:20px; }
 
-/* Confetti */
-.confetti-container { position:absolute; inset:0; pointer-events:none; z-index:25; overflow:hidden; }
-.confetti-piece { position:absolute; width:8px; height:8px; opacity:0; }
-@keyframes confettiFall { 0%{opacity:1;transform:translateY(0) rotate(0deg) scale(1)} 100%{opacity:0;transform:translateY(150px) rotate(720deg) scale(0.3)} }
+/* removed confetti */
 
-.flash { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; font-size:2.5em; font-weight:bold; z-index:20; pointer-events:none; opacity:0; }
-.flash.show { animation:flashIn .8s forwards; }
-@keyframes flashIn { 0%{opacity:1;transform:scale(2)} 100%{opacity:0;transform:scale(1)} }
+/* removed flash */
 
 #end-screen { display:none; flex-direction:column; align-items:center; justify-content:center; height:100%; gap:16px; background:linear-gradient(135deg,#667eea,#764ba2); text-align:center; padding:20px; }
 #end-screen h1 { font-size:2.5em; text-transform:uppercase; }
@@ -66,19 +61,15 @@ html, body { height:100%; overflow:hidden; font-family:'Segoe UI',system-ui,sans
   <div class="player-half top" id="top-half">
     <div class="score-bar"><span class="name" id="score1">ИГРОК 1: 0</span><span class="name" id="round-top">—</span></div>
     <div class="card-area" id="card1"></div>
-    <div class="celebration" id="celeb1"><div class="celeb-text" id="celeb-text1"></div></div>
-    <div class="confetti-container" id="confetti1"></div>
-    <div class="flash" id="flash1"></div>
   </div>
   <div class="divider"></div>
   <div class="player-half bottom" id="bot-half">
     <div class="score-bar"><span class="name" id="score2">ИГРОК 2: 0</span><span class="name" id="round-bot">—</span></div>
     <div class="card-area" id="card2"></div>
-    <div class="celebration" id="celeb2"><div class="celeb-text" id="celeb-text2"></div></div>
-    <div class="confetti-container" id="confetti2"></div>
-    <div class="flash" id="flash2"></div>
   </div>
 </div>
+
+<div id="green-overlay"><div class="overlay-text" id="overlay-text"></div></div>
 
 <div id="end-screen">
   <h1 id="winner-text"></h1>
@@ -156,40 +147,43 @@ function showStart(){
   document.getElementById('start-screen').style.display='flex';
 }
 
-// Scatter flags randomly inside the circular card, Dobble-style
+// Scatter flags inside circular card with guaranteed non-overlapping circular hitboxes
 function renderCard(containerId, cardSymbols, player){
   const el=document.getElementById(containerId);
   el.innerHTML='';
+  const rect=el.getBoundingClientRect();
+  const W=rect.width||300, H=rect.height||300;
+  const centerX=W/2, centerY=H/2, cardR=Math.min(W,H)/2;
   const shuffledSyms=shuffle([...cardSymbols]);
-  // Varying sizes - some big, some medium
-  const sizeOptions=[58,48,64,44,56,50,62,42];
-  // Pre-generate positions ensuring they stay within circle and don't overlap too much
-  const placed=[];
-  shuffledSyms.forEach((sym,i)=>{
-    const sz=sizeOptions[i];
-    let cx,cy,attempts=0;
-    // Try to place within circle with some randomness
-    do {
-      // Random angle and radius within circle (bias toward filling the space)
-      const angle=Math.random()*Math.PI*2;
-      const maxR = 38 - (sz/4); // keep inside circle, bigger items closer to center
-      const r = Math.random() * maxR;
-      cx = 50 + r * Math.cos(angle);
-      cy = 50 + r * Math.sin(angle);
-      attempts++;
-    } while(attempts<30 && placed.some(p=>Math.hypot(p.x-cx,p.y-cy)<(sz+p.sz)*0.18));
-    placed.push({x:cx,y:cy,sz});
+  const sizeOptions=[52,44,56,40,50,46,54,42];
+  const placed=[]; // {x,y,r} in px, r = hitbox radius
 
-    const rot=(Math.random()*70-35)|0;
+  shuffledSyms.forEach((sym,i)=>{
+    const fontSize=sizeOptions[i%sizeOptions.length];
+    const hitR=fontSize*0.55; // circular hitbox radius
+    let px,py,ok,attempts=0;
+    do {
+      const angle=Math.random()*Math.PI*2;
+      const maxDist=cardR-hitR-6; // stay inside circle with padding
+      const dist=Math.sqrt(Math.random())*maxDist; // sqrt for uniform area distribution
+      px=centerX+dist*Math.cos(angle);
+      py=centerY+dist*Math.sin(angle);
+      ok=!placed.some(p=>Math.hypot(p.x-px,p.y-py)<(p.r+hitR+4)); // 4px gap
+      attempts++;
+    } while(!ok && attempts<200);
+    placed.push({x:px,y:py,r:hitR});
+
+    const rot=(Math.random()*50-25)|0;
     const btn=document.createElement('button');
     btn.className='flag-btn';
     btn.textContent=FLAGS[sym];
-    btn.style.fontSize=sz+'px';
-    btn.style.left=`calc(${cx}% - ${sz/2}px)`;
-    btn.style.top=`calc(${cy}% - ${sz/2}px)`;
+    btn.style.fontSize=fontSize+'px';
+    btn.style.width=(hitR*2)+'px';
+    btn.style.height=(hitR*2)+'px';
+    btn.style.left=(px-hitR)+'px';
+    btn.style.top=(py-hitR)+'px';
     btn.style.transform=`rotate(${rot}deg)`;
     btn.style.setProperty('--rot',rot+'deg');
-    btn.style.zIndex=Math.random()>0.5?3:2;
     btn.dataset.sym=sym;
     btn.addEventListener('click',()=>handleTap(player,sym,btn));
     el.appendChild(btn);
@@ -210,24 +204,6 @@ function showRound(){
   updateScores();
 }
 
-function spawnConfetti(containerId){
-  const container=document.getElementById(containerId);
-  container.innerHTML='';
-  const colors=['#ff6b6b','#ffd93d','#6bcb77','#4d96ff','#ff9ff3','#feca57','#ff6348','#7bed9f'];
-  for(let i=0;i<40;i++){
-    const piece=document.createElement('div');
-    piece.className='confetti-piece';
-    piece.style.left=Math.random()*100+'%';
-    piece.style.top=(20+Math.random()*30)+'%';
-    piece.style.background=colors[i%colors.length];
-    piece.style.borderRadius=Math.random()>0.5?'50%':'2px';
-    piece.style.width=(5+Math.random()*8)+'px';
-    piece.style.height=(5+Math.random()*8)+'px';
-    piece.style.animation=`confettiFall ${0.8+Math.random()*1.2}s ${Math.random()*0.3}s ease-out forwards`;
-    container.appendChild(piece);
-  }
-}
-
 function handleTap(player,sym,btn){
   if(locked) return;
   const [i1,i2]=pairs[currentPair];
@@ -238,19 +214,16 @@ function handleTap(player,sym,btn){
     btn.classList.add('correct');
     updateScores();
 
-    // Confetti
-    spawnConfetti(player===0?'confetti1':'confetti2');
-
-    // Show country + capital
+    // Green fullscreen overlay with country info
     const info=FLAG_INFO[sym];
-    const celebEl=document.getElementById(player===0?'celeb1':'celeb2');
-    const textEl=document.getElementById(player===0?'celeb-text1':'celeb-text2');
-    textEl.innerHTML=`${FLAGS[sym]}<br>${info[0]} — ${info[1]}`;
-    celebEl.className='celebration show';
+    const overlay=document.getElementById('green-overlay');
+    const overlayText=document.getElementById('overlay-text');
+    overlayText.innerHTML=`${FLAGS[sym]}<br>${info[0]} — ${info[1]}`;
+    overlay.className='show';
 
     setTimeout(()=>{
-      celebEl.className='celebration';
-      document.getElementById(player===0?'confetti1':'confetti2').innerHTML='';
+      overlay.className='';
+      overlay.style.display='none';
       currentPair++;
       showRound();
     },2000);
