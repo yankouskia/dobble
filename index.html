@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0">
+<title>Доббль — Флаги</title>
+<style>
+* { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+html, body { height:100%; overflow:hidden; font-family:'Segoe UI',system-ui,sans-serif; background:#1a1a2e; color:#fff; touch-action:manipulation; }
+
+/* START SCREEN */
+#start-screen { display:flex; flex-direction:column; align-items:center; justify-content:center; height:100%; gap:20px; background:linear-gradient(135deg,#667eea,#764ba2); }
+#start-screen h1 { font-size:3em; text-shadow:3px 3px 6px rgba(0,0,0,.3); }
+#start-screen p { font-size:1.2em; opacity:.9; text-align:center; padding:0 20px; }
+.btn { padding:18px 50px; font-size:1.4em; border:none; border-radius:50px; cursor:pointer; font-weight:bold; background:#ff6b6b; color:#fff; box-shadow:0 6px 20px rgba(0,0,0,.3); transition:transform .1s; }
+.btn:active { transform:scale(.95); }
+
+/* GAME SCREEN */
+#game-screen { display:none; height:100%; flex-direction:column; }
+.player-half { flex:1; position:relative; display:flex; align-items:center; justify-content:center; overflow:hidden; }
+.player-half.top { background:linear-gradient(180deg,#0f3460,#16213e); transform:rotate(180deg); }
+.player-half.bottom { background:linear-gradient(0deg,#1a1a2e,#0f3460); }
+.divider { height:4px; background:linear-gradient(90deg,#ff6b6b,#ffd93d,#6bcb77,#4d96ff); flex-shrink:0; position:relative; z-index:10; }
+
+/* Score bar */
+.score-bar { position:absolute; top:8px; left:0; right:0; display:flex; justify-content:space-between; padding:0 12px; font-size:.9em; font-weight:bold; z-index:5; pointer-events:none; }
+.score-bar .name { background:rgba(255,255,255,.15); padding:4px 12px; border-radius:20px; }
+
+/* Card area */
+.card-area { width:min(90vw,340px); height:min(42vh,340px); background:radial-gradient(circle,#fff 60%,#e8e8e8); border-radius:50%; position:relative; box-shadow:0 8px 32px rgba(0,0,0,.4); }
+.flag-btn { position:absolute; background:none; border:none; cursor:pointer; line-height:1; transition:transform .15s; z-index:2; padding:4px; }
+.flag-btn:active { transform:scale(1.2) !important; }
+.flag-btn.wrong { animation:shake .4s; }
+.flag-btn.correct { animation:pop .4s; }
+@keyframes shake { 0%,100%{transform:translateX(0)} 25%{transform:translateX(-8px)} 75%{transform:translateX(8px)} }
+@keyframes pop { 0%{transform:scale(1)} 50%{transform:scale(1.8)} 100%{transform:scale(1)} }
+
+/* Round flash */
+.flash { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; font-size:2.5em; font-weight:bold; z-index:20; pointer-events:none; opacity:0; }
+.flash.show { animation:flashIn .8s forwards; }
+@keyframes flashIn { 0%{opacity:1;transform:scale(2)} 100%{opacity:0;transform:scale(1)} }
+
+/* END SCREEN */
+#end-screen { display:none; flex-direction:column; align-items:center; justify-content:center; height:100%; gap:16px; background:linear-gradient(135deg,#667eea,#764ba2); text-align:center; padding:20px; }
+#end-screen h1 { font-size:2.5em; }
+#end-screen .scores { font-size:1.6em; margin:10px 0; }
+#end-screen .record { font-size:1em; opacity:.7; }
+</style>
+</head>
+<body>
+
+<div id="start-screen">
+  <h1>🃏 ДОББЛЬ</h1>
+  <p>Найди одинаковый флаг на двух картах быстрее соперника!</p>
+  <p style="font-size:2.5em">🇫🇷 🇯🇵 🇧🇷 🇦🇺</p>
+  <button class="btn" onclick="startGame()">НАЧАТЬ ИГРУ</button>
+  <p style="font-size:.85em;opacity:.6;max-width:320px">Положите телефон на стол между двумя игроками. Каждый видит свою карту. Найдите общий флаг и нажмите на него!</p>
+</div>
+
+<div id="game-screen">
+  <div class="player-half top" id="top-half">
+    <div class="score-bar"><span class="name" id="score1">Игрок 1: 0</span><span class="name" id="round-top">—</span></div>
+    <div class="card-area" id="card1"></div>
+    <div class="flash" id="flash1"></div>
+  </div>
+  <div class="divider"></div>
+  <div class="player-half bottom" id="bot-half">
+    <div class="score-bar"><span class="name" id="score2">Игрок 2: 0</span><span class="name" id="round-bot">—</span></div>
+    <div class="card-area" id="card2"></div>
+    <div class="flash" id="flash2"></div>
+  </div>
+</div>
+
+<div id="end-screen">
+  <h1 id="winner-text"></h1>
+  <div class="scores" id="final-scores"></div>
+  <div class="record" id="record-info"></div>
+  <button class="btn" onclick="startGame()">ИГРАТЬ СНОВА</button>
+  <button class="btn" style="background:#4d96ff;font-size:1em;padding:12px 30px" onclick="showStart()">МЕНЮ</button>
+</div>
+
+<script>
+// 57 recognizable flag emojis (Europe, Asia, Americas, Oceania)
+const FLAGS = [
+  '🇦🇷','🇦🇺','🇦🇹','🇧🇪','🇧🇷','🇨🇦','🇨🇱','🇨🇳','🇨🇴','🇭🇷',
+  '🇨🇿','🇩🇰','🇪🇨','🇫🇮','🇫🇷','🇩🇪','🇬🇷','🇭🇺','🇮🇸','🇮🇳',
+  '🇮🇩','🇮🇪','🇮🇱','🇮🇹','🇯🇵','🇰🇿','🇰🇷','🇱🇻','🇱🇹','🇱🇺',
+  '🇲🇽','🇲🇨','🇳🇱','🇳🇿','🇳🇴','🇵🇦','🇵🇾','🇵🇪','🇵🇭','🇵🇱',
+  '🇵🇹','🇷🇴','🇷🇺','🇸🇬','🇸🇰','🇸🇮','🇪🇸','🇸🇪','🇨🇭','🇹🇼',
+  '🇹🇭','🇹🇷','🇺🇦','🇬🇧','🇺🇸','🇺🇾','🇻🇳'
+];
+
+// Generate Dobble deck using projective plane of order n=7
+function generateDeck(n) {
+  const cards = [];
+  // First card: symbols 0..n
+  cards.push(Array.from({length:n+1},(_,i)=>i));
+  // Next n cards
+  for(let i=0;i<n;i++){
+    const card=[0];
+    for(let j=0;j<n;j++) card.push(n+1+i*n+j);
+    cards.push(card);
+  }
+  // n*n cards
+  for(let i=0;i<n;i++){
+    for(let j=0;j<n;j++){
+      const card=[i+1];
+      for(let k=0;k<n;k++) card.push(n+1+k*n+((i*k+j)%n));
+      cards.push(card);
+    }
+  }
+  return cards;
+}
+
+const DECK = generateDeck(7); // 57 cards, 8 symbols each
+
+let scores=[0,0], currentPair=0, pairs=[], locked=false;
+
+function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.random()*i+1|0;[a[i],a[j]]=[a[j],a[i]]}return a}
+
+function startGame(){
+  document.getElementById('start-screen').style.display='none';
+  document.getElementById('end-screen').style.display='none';
+  const g=document.getElementById('game-screen');
+  g.style.display='flex';
+  scores=[0,0]; currentPair=0;
+  // Create pairs from shuffled deck
+  const deck=shuffle([...Array(57).keys()]);
+  pairs=[];
+  for(let i=0;i+1<deck.length;i+=2) pairs.push([deck[i],deck[i+1]]);
+  showRound();
+}
+
+function showStart(){
+  document.getElementById('end-screen').style.display='none';
+  document.getElementById('start-screen').style.display='flex';
+}
+
+// Position 8 flags on a circular card with varied sizes/rotations
+function renderCard(containerId, cardSymbols, player){
+  const el=document.getElementById(containerId);
+  el.innerHTML='';
+  const sizes=[42,36,48,32,44,38,46,34];
+  const shuffledSyms=[...cardSymbols];
+  shuffle(shuffledSyms);
+  shuffledSyms.forEach((sym,i)=>{
+    const angle=(i/8)*Math.PI*2 - Math.PI/2;
+    const r=38; // % from center
+    const cx=50+r*Math.cos(angle);
+    const cy=50+r*Math.sin(angle);
+    const btn=document.createElement('button');
+    btn.className='flag-btn';
+    btn.textContent=FLAGS[sym];
+    const sz=sizes[i];
+    btn.style.fontSize=sz+'px';
+    btn.style.left=`calc(${cx}% - ${sz/2}px)`;
+    btn.style.top=`calc(${cy}% - ${sz/2}px)`;
+    btn.style.transform=`rotate(${(Math.random()*60-30)|0}deg)`;
+    btn.dataset.sym=sym;
+    btn.addEventListener('click',()=>handleTap(player,sym,btn));
+    el.appendChild(btn);
+  });
+}
+
+function findMatch(c1,c2){
+  const s=new Set(c1);
+  return c2.find(x=>s.has(x));
+}
+
+function showRound(){
+  if(currentPair>=pairs.length){ endGame(); return; }
+  locked=false;
+  const [i1,i2]=pairs[currentPair];
+  const c1=DECK[i1], c2=DECK[i2];
+  renderCard('card1',c1,0);
+  renderCard('card2',c2,1);
+  updateScores();
+}
+
+function handleTap(player,sym,btn){
+  if(locked) return;
+  const [i1,i2]=pairs[currentPair];
+  const match=findMatch(DECK[i1],DECK[i2]);
+  if(sym===match){
+    locked=true;
+    scores[player]++;
+    btn.classList.add('correct');
+    const flashEl=document.getElementById(player===0?'flash1':'flash2');
+    flashEl.textContent='✅ +1';
+    flashEl.className='flash show';
+    updateScores();
+    setTimeout(()=>{
+      flashEl.className='flash';
+      currentPair++;
+      showRound();
+    },700);
+  } else {
+    btn.classList.add('wrong');
+    setTimeout(()=>btn.classList.remove('wrong'),400);
+  }
+}
+
+function updateScores(){
+  document.getElementById('score1').textContent=`Игрок 1: ${scores[0]}`;
+  document.getElementById('score2').textContent=`Игрок 2: ${scores[1]}`;
+  const r=`${currentPair+1}/${pairs.length}`;
+  document.getElementById('round-top').textContent=r;
+  document.getElementById('round-bot').textContent=r;
+}
+
+function endGame(){
+  document.getElementById('game-screen').style.display='none';
+  const e=document.getElementById('end-screen');
+  e.style.display='flex';
+  const w=scores[0]>scores[1]?'🏆 Игрок 1 победил!':scores[1]>scores[0]?'🏆 Игрок 2 победил!':'🤝 Ничья!';
+  document.getElementById('winner-text').textContent=w;
+  document.getElementById('final-scores').textContent=`Игрок 1: ${scores[0]} — Игрок 2: ${scores[1]}`;
+  // High scores
+  const hs=JSON.parse(localStorage.getItem('dobble-hs')||'[]');
+  const best=Math.max(scores[0],scores[1]);
+  hs.push({s:best,d:new Date().toLocaleDateString('ru')});
+  hs.sort((a,b)=>b.s-a.s);
+  if(hs.length>5)hs.length=5;
+  localStorage.setItem('dobble-hs',JSON.stringify(hs));
+  document.getElementById('record-info').textContent='Рекорд: '+hs[0].s+' очков ('+hs[0].d+')';
+}
+</script>
+</body>
+</html>
